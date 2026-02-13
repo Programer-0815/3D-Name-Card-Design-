@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>你的 3D 名片</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background: #020617; height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; font-family: sans-serif; perspective: 1000px; }
+        .card { width: 300px; padding: 40px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 25px; backdrop-filter: blur(15px); text-align: center; color: white; transform-style: preserve-3d; }
+        h1 { font-size: 28px; margin: 10px 0; transform: translateZ(60px); color: #38bdf8; }
+        p.title { font-size: 14px; opacity: 0.7; transform: translateZ(40px); letter-spacing: 2px; }
+        p.bio { font-size: 14px; margin: 20px 0; transform: translateZ(30px); line-height: 1.6; }
+        .links { margin-top: 30px; transform: translateZ(50px); display: flex; justify-content: center; gap: 20px; }
+        .links a { color: white; font-size: 24px; transition: 0.3s; }
+        .links a:hover { color: #38bdf8; transform: scale(1.2); }
+    </style>
+</head>
+<body>
+    <div class="card" id="myCard">
+        <h1 id="dspName">加载中...</h1>
+        <p class="title" id="dspTitle">POSITION</p>
+        <p class="bio" id="dspBio">Loading bio...</p>
+        <div class="links">
+            <a id="linkIG" target="_blank"><i class="fab fa-instagram"></i></a>
+            <a id="linkWA" target="_blank"><i class="fab fa-whatsapp"></i></a>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.7.0/vanilla-tilt.min.js"></script>
+    <script>
+        // 1. 从网址读取数据
+        const p = new URLSearchParams(window.location.search);
+        if(p.has('n')) {
+            document.getElementById('dspName').innerText = p.get('n');
+            document.getElementById('dspTitle').innerText = p.get('t');
+            document.getElementById('dspBio').innerText = p.get('b');
+            document.getElementById('linkIG').href = "https://instagram.com/" + p.get('i');
+            document.getElementById('linkWA').href = "https://wa.me/" + p.get('w');
+        }
+
+        // 2. 启动 3D 效果
+        VanillaTilt.init(document.querySelector(".card"), {
+            max: 25,
+            speed: 400,
+            glare: true,
+            "max-glare": 0.5,
+            gyroscope: true
+        });
+    </script>
+</body>
+</html>
