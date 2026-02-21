@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>极简自律</title>
+    <style>
+        /* 1. 简约黑白 UI 设计 */
+        :root { --bg: #ffffff; --main: #000000; --gray: #f2f2f2; }
+        body { background: var(--bg); color: var(--main); font-family: sans-serif; margin: 0; padding: 20px; }
+        
+        .card { background: var(--gray); border-radius: 24px; padding: 20px; margin-bottom: 25px; }
+        h1 { font-size: 32px; font-weight: 900; margin-bottom: 25px; letter-spacing: -1px; }
+        
+        /* 圆角输入框和按钮 */
+        label { display: block; font-size: 12px; margin: 10px 0 5px 10px; font-weight: bold; }
+        input { 
+            width: 100%; border: none; background: #fff; padding: 15px; 
+            border-radius: 15px; margin-bottom: 12px; box-sizing: border-box; font-size: 16px; outline: none;
+        }
+        
+        .primary-btn { 
+            width: 100%; background: var(--main); color: #fff; border: none; 
+            padding: 16px; border-radius: 18px; font-weight: bold; font-size: 16px; cursor: pointer;
+        }
+
+        /* 任务卡片样式 */
+        .goal-item { border: 2px solid var(--main); border-radius: 22px; padding: 18px; margin-bottom: 15px; }
+        .goal-header { display: flex; justify-content: space-between; align-items: center; }
+        .goal-item.done { background: var(--gray); border-color: var(--gray); opacity: 0.6; }
+        
+        .check-box { width: 30px; height: 30px; border: 2px solid var(--main); border-radius: 50%; cursor: pointer; }
+        .done .check-box { background: var(--main); position: relative; }
+        .done .check-box::after { content: '✓'; color: #fff; position: absolute; left: 8px; top: 2px; font-size: 18px; }
+
+        /* 闹钟同步和删除按钮 */
+        .sync-btn { background: #000; color: #fff; font-size: 11px; padding: 6px 12px; border-radius: 12px; border: none; margin-top: 10px; cursor: pointer; }
+        .delete-link { font-size: 12px; color: #888; background: none; border: none; text-decoration: underline; margin-top: 15px; cursor: pointer; display: block; }
+    </style>
+</head>
+<body>
+
+    <h1>Focus.</h1>
+
+    <div class="card">
+        <label>自律目标</label>
+        <input type="text" id="gInput" placeholder="输入目标...">
+        <label>计划天数</label>
+        <input type="number" id="targetDays" placeholder="例如：21">
+        <label>提醒时间</label>
+        <input type="time" id="tInput" value="08:00">
+        <button class="primary-btn" onclick="add()">开启计划</button>
+    </div>
+
+    <div id="list"></div>
+
+    <script>
+        let goals = JSON.parse(localStorage.getItem('my_discipline_final')) || [];
+
+        function add() {
+            const title = document.getElementById('gInput').value;
+            const days = document.getElementById('targetDays').value;
+            const time = document.getElementById('tInput').value;
+            if(!title || !days) return alert("请填写完整");
+
+            goals.push({ id: Date.now(), title, targetDays: days, currentDays: 0, time, doneToday: false });
+            save();
+            syncToSystem(time, title); // 添加时自动尝试调动一次闹钟
+            document.getElementById('gInput').value = '';
+            document.getElementById('targetDays').value = '';
+        }
+
+        // 核心：调动手机系统闹钟的逻辑
+        function syncToSystem(time, title) {
+            const [h, m] = time.split(':');
+            const intent = `intent:#Intent;action=android.intent.action.SET_ALARM;i:android.intent.extra.alarm.HOUR=${parseInt(h)};i:android.intent.extra.alarm.MINUTES=${parseInt(m)};s:android.intent.extra.alarm.MESSAGE=${encodeURIComponent(title)};b:android.intent.extra.alarm.SKIP_UI=false;end`;
+            
+            try {
+                window.location.href = intent;
+            } catch (e) {
+                alert("请在 Chrome 浏览器中运行以同步闹钟");
+            }
+        }
+
+        function toggle(id) {
+            goals = goals.map(g => {
+                if(g.id === id) {
+                    g.doneToday = !g.doneToday;
+                    g.currentDays += g.doneToday ? 1 : -1;
+                }
+                return g;
+            });
+            save();
+        }
+
+        function del(id) {
+            if(confirm("确定删除这个目标吗？")) {
+                goals = goals.filter(g => g.id !== id);
+                save();
+            }
+        }
+
+        function save() {
+            localStorage.setItem('my_discipline_final', JSON.stringify(goals));
+            render();
+        }
+
+        function render() {
+            document.getElementById('list').innerHTML = goals.map(g => `
+                <div class="goal-item ${g.doneToday ? 'done' : ''}">
+                    <div class="goal-header">
+                        <div>
+                            <div style="font-weight:bold; font-size:18px;">${g.title}</div>
+                            <div style="font-size:12px; color:#666;">进度: ${g.currentDays}/${g.targetDays} 天</div>
+                        </div>
+                        <div class="check-box" onclick="toggle(${g.id})"></div>
+                    </div>
+                    <button class="sync-btn" onclick="syncToSystem('${g.time}', '${g.title}')">⏰ 同步闹钟: ${g.time}</button>
+                    <button class="delete-link" onclick="del(${g.id})">删除目标</button>
+                </div>
+            `).reverse().join('');
+        }
+        render();
+    </script>
+</body>
+</html>
